@@ -17,19 +17,21 @@ public class Processo implements Runnable {
 
     @Override
     public void run() {
-        while (estaAtivo) {
+        // Enquanto o processo está ativo (vivo) e não está usando o recurso.
+        while (estaAtivo && !usandoRecurso) {
             try {
                 Random r = new Random();
                 Thread.sleep(r.nextInt(10, 26) * 1000L);
-                coordenadorAtual.receberRequisicao(this);
+                // Se continua ativo e ele mesmo não começou a usar o recurso no tempo de espera, manda uma requisição.
+                if (estaAtivo && !usandoRecurso) coordenadorAtual.receberRequisicao(this);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    // Pensar como parar de processar caso o Coordenador troque
     public void processar() {
+        // Ocupa o recurso
         usandoRecurso = true;
         try {
             Random r = new Random();
@@ -38,9 +40,12 @@ public class Processo implements Runnable {
             e.printStackTrace();
         }
         finally {
+            // Libera o recurso e avisa o coordenador.
             usandoRecurso = false;
             System.out.printf("Processo %d liberou o recurso.\n", ID);
             coordenadorAtual.liberarRecurso();
+            // Reinicia sua thread
+            new Thread(this).start();
         }
     }
 
